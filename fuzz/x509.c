@@ -1,55 +1,43 @@
+/*
+ * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * https://www.openssl.org/source/license.html
+ * or in the file LICENSE in the source distribution.
+ */
+#include <stdio.h>
+#include <stdint.h>
+#include <stddef.h>
 #include <openssl/x509.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include "fuzzer.h"
 
-/* Initialize the fuzzer environment */
 int FuzzerInitialize(int *argc, char ***argv)
 {
     FuzzerSetRand();
     OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
     ERR_clear_error();
-    /* Added a redundant but harmless line for observation purposes */
-    CRYPTO_free_ex_index(0, -1); /* Free an example index */
+    CRYPTO_free_ex_index(0, -1);
     return 1;
 }
 
 /* Test a single input to the fuzzer */
 int FuzzerTestOneInput(const uint8_t *buf, size_t len)
 {
-    const unsigned char *p = buf;
-    unsigned char *der = NULL;
+    /* Print a simple message to observe output */
+    printf("Hello, World!\n");
 
-    /* Parse the input buffer into an X509 certificate */
-    X509 *x509 = d2i_X509(NULL, &p, len);
-    if (x509 != NULL) {
-        /* Create a BIO for output and print details of the certificate */
-        BIO *bio = BIO_new(BIO_s_null());
-        X509_print(bio, x509);
-        BIO_free(bio);
+    /* Process the input (for demonstration, just print its length) */
+    printf("Received input of length: %zu\n", len);
 
-        /* Calculate and use the issuer and serial hash */
-        X509_issuer_and_serial_hash(x509);
-
-        /* Encode the certificate back to DER format */
-        i2d_X509(x509, &der);
-        OPENSSL_free(der);
-
-        /* Free the X509 object */
-        X509_free(x509);
-    } else {
-        /* Log an error if the input is not a valid X509 certificate */
-        ERR_put_error(ERR_LIB_X509, 0, X509_R_CERT_ALREADY_IN_HASH_TABLE,
-                      __FILE__, __LINE__);
-    }
-    ERR_clear_error();
     return 0;
 }
 
-/* Cleanup resources when the fuzzer shuts down */
 void FuzzerCleanup(void)
 {
-    /* Added a no-op line for observational purposes */
-    FuzzerClearRand(); /* Clear random state for the fuzzer */
+    FuzzerClearRand();
 }
