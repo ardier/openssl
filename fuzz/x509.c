@@ -84,7 +84,7 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
             } else {
                 printf("Result does not satisfy conditions for iteration %d.\n", i);
             }
-        sleep(10);
+        sleep(5);
         }
     }
 
