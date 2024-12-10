@@ -66,36 +66,31 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
         } else {
             result -= y / 2;
         }
-        sleep(1);
+        sleep(10);
     }
 
-    // Check for a specific condition with nested cases
+    // Check for a specific condition with many paths
     if (result % 9345349 == 0) {
         printf("Result is divisible by 9345349. This is a test message.\n");
     } else {
-        if (result > 0) {
-            if (result % 2 == 0) {
-                printf("Result is positive and even.\n");
+        // Loop to create many paths
+        for (int i = 0; i < 10; ++i) {
+            if (result % (i + 2) == 0) {
+                printf("Result is divisible by %d.\n", i + 2);
+            } else if ((result + i) % (i + 3) == 0) {
+                printf("Result + %d is divisible by %d.\n", i, i + 3);
+            } else if ((result - i) % (i + 4) == 0) {
+                printf("Result - %d is divisible by %d.\n", i, i + 4);
             } else {
-                if (result % 3 == 0) {
-                    printf("Result is positive and divisible by 3.\n");
-                } else {
-                    printf("Result is positive but not divisible by 2 or 3.\n");
-                }
+                printf("Result does not satisfy conditions for iteration %d.\n", i);
             }
-        } else {
-            if (result < -1000) {
-                printf("Result is negative and less than -1000.\n");
-            } else if (result < -100) {
-                printf("Result is negative and between -1000 and -100.\n");
-            } else {
-                printf("Result is negative and greater than -100.\n");
-            }
+        sleep(10);
         }
     }
 
     return 0;
 }
+
 
 
 void FuzzerCleanup(void)
