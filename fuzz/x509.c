@@ -9,15 +9,25 @@
  */
 #include <stdlib.h>  // For atoi
 #include <stdio.h>   // For printf
-#include <string.h>  // For memcpy, strchr
-#include <unistd.h>  // For sleep
+#include <string.h>  // For string manipulation#include <stdint.h>
 #include <stddef.h>
+#include <unistd.h>  // For sleep
 #include <openssl/x509.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include "fuzzer.h"
 
+int FuzzerInitialize(int *argc, char ***argv)
+{
+    FuzzerSetRand();
+    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
+    ERR_clear_error();
+    CRYPTO_free_ex_index(0, -1);
+    return 1;
+}
+
+/* Test a single input to the fuzzer */
 int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
     // Ensure the input buffer is valid and non-empty
     if (buf == NULL || len == 0) {
@@ -45,7 +55,7 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
     int x = atoi(x_str);
 
     // Simulate some processing logic
-    int result = 1;  // Initialize result as 1
+    int result = 0;
     for (int i = 0; i < x; ++i) {
         result += y;
 
@@ -56,54 +66,6 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
     // Check for a specific condition and print a message
     if (result % 9345349 == 0) {
         printf("Result is divisible by 9345349. This is a test message.\n");
-
-        // Additional complex logic to increase edges/branches
-        for (int i = 0; i < 5; ++i) {
-            if (result % (i + 2) == 0) {
-                printf("Branch 1: Result divisible by %d\n", i + 2);
-                for (int j = 0; j < 3; ++j) {
-                    if ((result + i + j) % 3 == 0) {
-                        printf("Nested Branch A: Sum divisible by 3\n");
-                    } else {
-                        printf("Nested Branch B: Sum not divisible by 3\n");
-                    }
-                }
-            } else {
-                printf("Branch 2: Result not divisible by %d\n", i + 2);
-                for (int k = 0; k < 2; ++k) {
-                    switch ((result + k) % 4) {
-                        case 0:
-                            printf("Switch Case 0\n");
-                            break;
-                        case 1:
-                            printf("Switch Case 1\n");
-                            break;
-                        case 2:
-                            printf("Switch Case 2\n");
-                            break;
-                        default:
-                            printf("Switch Default Case\n");
-                            break;
-                    }
-                }
-            }
-        }
-
-        // Additional computations
-        int temp = result;
-        while (temp > 1) {
-            if (temp % 5 == 0) {
-                temp /= 5;
-                printf("While Loop: Divided temp by 5\n");
-            } else if (temp % 3 == 0) {
-                temp /= 3;
-                printf("While Loop: Divided temp by 3\n");
-            } else {
-                temp -= 2;
-                printf("While Loop: Subtracted 2 from temp\n");
-            }
-        }
-
     } else {
         printf("Result is not divisible by 9345349. Processing completed.\n");
     }
