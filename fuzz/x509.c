@@ -1,43 +1,54 @@
-/*
- * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
- *
- * Licensed under the Apache License 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * https://www.openssl.org/source/license.html
- * or in the file LICENSE in the source distribution.
- */
-#include <stdio.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <openssl/x509.h>
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
-#include "fuzzer.h"
+#include <cstdlib>  // For std::atoi
+#include <iostream> // For std::cout
+#include <string>   // For std::string
+#include <thread>   // For std::this_thread::sleep_for
+#include <chrono>   // For std::chrono::seconds
 
-int FuzzerInitialize(int *argc, char ***argv)
-{
-    FuzzerSetRand();
-    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
-    ERR_clear_error();
-    CRYPTO_free_ex_index(0, -1);
-    return 1;
-}
-
-/* Test a single input to the fuzzer */
 int FuzzerTestOneInput(const uint8_t *buf, size_t len)
 {
-    /* Print a simple message to observe output */
-    printf("Hello, World!\n");
+    try {
+        // Convert the input buffer into a string
+        std::string input(reinterpret_cast<const char *>(buf), len);
 
-    /* Process the input (for demonstration, just print its length) */
-    printf("Received input of length: %zu\n", len);
+        // Ensure the input is not empty
+        if (input.empty()) {
+            return 0;
+        }
 
+        // Parse input as a comma-separated pair of integers
+        std::size_t comma_pos = input.find(',');
+        if (comma_pos == std::string::npos) {
+            return 0;
+        }
+
+        // Extract y and x as substrings
+        std::string y_str = input.substr(0, comma_pos);
+        std::string x_str = input.substr(comma_pos + 1);
+
+        // Convert y and x to integers using std::atoi
+        int y = std::atoi(y_str.c_str());
+        int x = std::atoi(x_str.c_str());
+
+        // Simulate some processing logic
+        int result = 0;
+        for (int i = 0; i < x; ++i) {
+            result += y;
+
+            // Wait for 10 seconds
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        }
+
+        // Cause a segmentation fault if the result is divisible by 9345349
+        if (result % 9345349 == 0) {
+            std::cout << "result is divisible by 9345349. Here comes the segfault." << std::endl;
+
+            int *crash = nullptr;
+            *crash = 42; // This will cause a segmentation fault
+        } else {
+            std::cout << "result is not divisible by 9345349" << std::endl;
+        }
+    } catch (...) {
+        // Catch any exceptions and ignore
+    }
     return 0;
-}
-
-void FuzzerCleanup(void)
-{
-    FuzzerClearRand();
 }
