@@ -18,16 +18,6 @@
 #include <openssl/rand.h>
 #include "fuzzer.h"
 
-int FuzzerInitialize(int *argc, char ***argv)
-{
-    FuzzerSetRand();
-    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
-    ERR_clear_error();
-    CRYPTO_free_ex_index(0, -1);
-    return 1;
-}
-
-/* Test a single input to the fuzzer */
 int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
     // Ensure the input buffer is valid and non-empty
     if (buf == NULL || len == 0) {
@@ -54,24 +44,50 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
     int y = atoi(y_str);
     int x = atoi(x_str);
 
+    // Initialize result to 1
+    int result = 1;
+
     // Simulate some processing logic
-    int result = 0;
     for (int i = 0; i < x; ++i) {
         result += y;
 
         // Simulate a delay for each iteration
-        sleep(10);
+        if (i % 2 == 0) {
+            result *= 2;
+        } else {
+            result -= y / 2;
+        }
+        sleep(100);
     }
 
-    // Check for a specific condition and print a message
+    // Check for a specific condition with nested cases
     if (result % 9345349 == 0) {
         printf("Result is divisible by 9345349. This is a test message.\n");
     } else {
-        printf("Result is not divisible by 9345349. Processing completed.\n");
+        if (result > 0) {
+            if (result % 2 == 0) {
+                printf("Result is positive and even.\n");
+            } else {
+                if (result % 3 == 0) {
+                    printf("Result is positive and divisible by 3.\n");
+                } else {
+                    printf("Result is positive but not divisible by 2 or 3.\n");
+                }
+            }
+        } else {
+            if (result < -1000) {
+                printf("Result is negative and less than -1000.\n");
+            } else if (result < -100) {
+                printf("Result is negative and between -1000 and -100.\n");
+            } else {
+                printf("Result is negative and greater than -100.\n");
+            }
+        }
     }
 
     return 0;
 }
+
 
 void FuzzerCleanup(void)
 {
