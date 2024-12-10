@@ -59,7 +59,7 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
         result += y;
 
         // Simulate a delay for each iteration
-        sleep(1);
+        sleep(10);
     }
 
     // Check for a specific condition and print a message
