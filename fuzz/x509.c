@@ -1,22 +1,23 @@
 /*
  * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0.
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy at
  * https://www.openssl.org/source/license.html
- * or in the file LICENSE in the source distribution.
  */
 #include <stdlib.h>  // For atoi
 #include <stdio.h>   // For printf
-#include <string.h>  // For string manipulation#include <stdint.h>
+#include <string.h>  // For string manipulation
+#include <stdint.h>
 #include <stddef.h>
-#include <unistd.h>  // For sleep
 #include <openssl/x509.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include "fuzzer.h"
+
+#define LOOP_ITERATIONS 50000000  // Fine-tune for delay simulation
 
 int FuzzerInitialize(int *argc, char ***argv)
 {
@@ -27,71 +28,77 @@ int FuzzerInitialize(int *argc, char ***argv)
     return 1;
 }
 
+void busy_loop(int duration) {
+    volatile int sum = 0;
+    for (int i = 0; i < LOOP_ITERATIONS * duration; i++) {
+        sum += i % 2 ? i : -i;
+    }
+}
+
 int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
-    // Ensure the input buffer is valid and non-empty
     if (buf == NULL || len == 0) {
         return 0;
     }
 
-    // Convert the input buffer into a null-terminated string
     char input[len + 1];
     memcpy(input, buf, len);
     input[len] = '\0';
 
-    // Find the comma in the input string
     char *comma_pos = strchr(input, ',');
     if (comma_pos == NULL) {
-        return 0;  // No comma found; exit early
+        return 0;
     }
 
-    // Split the string into two parts: y_str and x_str
     *comma_pos = '\0';
     char *y_str = input;
     char *x_str = comma_pos + 1;
 
-    // Convert y and x to integers using atoi
     int y = atoi(y_str);
     int x = atoi(x_str);
-
-    // Initialize result to 1
     int result = 1;
 
-    // Simulate some processing logic
     for (int i = 0; i < x; ++i) {
         result += y;
 
-        // Simulate a delay for each iteration
         if (i % 2 == 0) {
             result *= 2;
         } else {
             result -= y / 2;
         }
-        sleep(10);
+
+        // Simulate delay through computation
+        busy_loop(2);
     }
 
-    // Check for a specific condition with many paths
-    if (result % 9345349 == 0) {
-        printf("Result is divisible by 9345349. This is a test message.\n");
+    // Hard-to-reach branch enhancement
+    if (result % 9345349 == 0 && result > 10000000) {
+        printf("Entering hard-to-reach branch. Performing heavy processing...\n");
+
+        for (int i = 0; i < 500; ++i) {
+            printf("Processing line %d in deep branch...\n", i + 1);
+            result += i % 5;
+
+            if (i % 50 == 0) {
+                printf("Checkpoint at %d lines.\n", i);
+            }
+        }
     } else {
-        // Loop to create many paths
         for (int i = 0; i < 10; ++i) {
             if (result % (i + 2) == 0) {
-                printf("Result is divisible by %d.\n", i + 2);
+                printf("Result divisible by %d.\n", i + 2);
             } else if ((result + i) % (i + 3) == 0) {
-                printf("Result + %d is divisible by %d.\n", i, i + 3);
+                printf("Result + %d divisible by %d.\n", i, i + 3);
             } else if ((result - i) % (i + 4) == 0) {
-                printf("Result - %d is divisible by %d.\n", i, i + 4);
+                printf("Result - %d divisible by %d.\n", i, i + 4);
             } else {
-                printf("Result does not satisfy conditions for iteration %d.\n", i);
+                printf("No conditions met at iteration %d.\n", i);
             }
-        sleep(5);
+            busy_loop(1);  // Simulate 1-second work loop
         }
     }
 
     return 0;
 }
-
-
 
 void FuzzerCleanup(void)
 {
