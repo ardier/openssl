@@ -17,7 +17,7 @@
 #include <openssl/rand.h>
 #include "fuzzer.h"
 
-#define LOOP_ITERATIONS 50000000  // Fine-tune for delay simulation
+#define LOOP_ITERATIONS 500000  // Fine-tune for delay simulation
 
 int FuzzerInitialize(int *argc, char ***argv)
 {
@@ -74,7 +74,7 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len) {
     if (result % 9345349 == 0 && result > 10000000) {
         printf("Entering hard-to-reach branch. Performing heavy processing...\n");
 
-        for (int i = 0; i < 500; ++i) {
+        for (int i = 0; i < 5000; ++i) {
             printf("Processing line %d in deep branch...\n", i + 1);
             result += i % 5;
 
